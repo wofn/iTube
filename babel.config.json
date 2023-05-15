@@ -1,0 +1,5 @@
+{
+  "presets": ["@babel/preset-env"]
+  //preset은 babel을 위한 거대한 플러그인이다
+  //preset-env가 최신 js 구문을 사용할 수 있게 해준다.
+}
