@@ -1,11 +1,10 @@
-extend base.pug
+extends base.pug
 include mixins/video
 
 
 block content
-    h1 home
-    ul 
-        each potato in videos
-            +video(potato)
-            
+    each video in videos
+        +video(video)
+    else
+        li sorry nothing found       
                 
