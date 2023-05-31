@@ -5,7 +5,7 @@ import "./models/Video";
 import "./models/User";
 import app from "./server"; //server.js의 app을 작동할 수 있께 해준다.
 
-const PORT = 4015;
+const PORT = 4000;
 
 const handleListening = () =>
   console.log(`server listening on port http://localhost:${PORT} 🚀`);

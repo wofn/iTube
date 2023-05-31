@@ -75,7 +75,7 @@ export const postLogin = async (req, res) => {
 export const startGithubLogin = (req, res) => {
   const baseUrl = "https://github.com/login/oauth/authorize";
   const config = {
-    client_id: "9fac726866be2ff14f36",
+    client_id: process.env.GH_CLIENT,
     allow_signup: false,
     scope: "read:user user:email",
   };
@@ -84,7 +84,26 @@ export const startGithubLogin = (req, res) => {
   return res.redirect(finalUrl);
 };
 
-export const finishGithubLogin = (req, res) => {};
+export const finishGithubLogin = async (req, res) => {
+  const baseUrl = "https://github.com/login/oauth/access_token"; //우라가 사용할 baseUrl
+  const config = {
+    client_id: process.env.GH_CLIENT,
+    client_secret: process.env.GH_SECRET,
+    code: req.query.code, //github가 주는 코드, 주소창에 뜬다.
+  };
+  const params = new URLSearchParams(config).toString();
+  const finalUrl = `${baseUrl}?${params}`;
+  const data = await fetch(finalUrl, {
+    //finalUrl에 post 요청보내기, fetch를 통해 데이터를 받아오고
+    //fetch는 브라우저에서만 사용 가능
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+    },
+  });
+  const json = await data.json(); //json으로 추출
+  console.log(json);
+};
 
 export const edit = (req, res) => res.send("edit user");
 export const remove = (req, res) => res.send("remove user");
