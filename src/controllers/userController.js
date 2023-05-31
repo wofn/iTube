@@ -52,7 +52,7 @@ export const postLogin = async (req, res) => {
   //패스워드 일치하는지 체크
   const pageTitle = "login";
   const { username, password } = req.body; //입력한 password값 가져오기
-  const user = await User.findOne({ username }); //DB에서 user 정보 가져오기
+  const user = await User.findOne({ username, socialOnly: false }); //DB에서 user 정보 가져오기
   if (!user) {
     return res.status(400).render("login", {
       pageTitle,
@@ -125,14 +125,11 @@ export const finishGithubLogin = async (req, res) => {
     if (!emailObj) {
       return res.redirect("/login");
     }
-    const existingUser = await User.findOne({ email: emailObj.email }); //깃헙이 주는 같은 email을 가진 user가 이미 이다면 로그인
-    if (existingUser) {
-      req.session.loggedIn = true;
-      req.session.user = existingUser;
-      return res.redirect("/");
-    } else {
-      //계정 생성! email로 user가 없으니까 계정을 생성해야 된다.
-      const user = await User.create({
+    let user = await User.findOne({ email: emailObj.email });
+    if (!user) {
+      //유저를 찾게 되면 로그인, 못찾으면 생성 후 로그인
+      user = await User.create({
+        avatarUrl: userData.avatar_url,
         name: userData.name ? userData.name : "Unknown",
         username: userData.login,
         email: emailObj.email,
@@ -140,16 +137,19 @@ export const finishGithubLogin = async (req, res) => {
         socialOnly: true,
         location: userData.location,
       });
-      req.session.loggedIn = true;
-      req.session.user = user;
-      return res.redirect("/");
     }
+    req.session.loggedIn = true;
+    req.session.user = user;
+    return res.redirect("/");
   } else {
     return res.redirect("/login");
   }
 };
 
+export const logout = (req, res) => {
+  req.session.destroy(); //세션 없애기
+  return res.redirect("/");
+};
+
 export const edit = (req, res) => res.send("edit user");
-export const remove = (req, res) => res.send("remove user");
-export const logout = (req, res) => res.send("logout user");
 export const see = (req, res) => res.send("see user");
