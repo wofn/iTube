@@ -74,6 +74,7 @@ export const postLogin = async (req, res) => {
 };
 
 export const startGithubLogin = (req, res) => {
+  //몇몇 configuration parameter을 가지고 URL 만들기
   const baseUrl = "https://github.com/login/oauth/authorize";
   const config = {
     client_id: process.env.GH_CLIENT,
@@ -82,7 +83,7 @@ export const startGithubLogin = (req, res) => {
   };
   const params = new URLSearchParams(config).toString(); //string으로 쭉 이어져서 나온다
   const finalUrl = `${baseUrl}?${params}`;
-  return res.redirect(finalUrl);
+  return res.redirect(finalUrl); //user를 github로 보내기
 };
 
 export const finishGithubLogin = async (req, res) => {
@@ -93,9 +94,10 @@ export const finishGithubLogin = async (req, res) => {
     code: req.query.code, //github가 주는 코드, 주소창에 뜬다.
   };
   const params = new URLSearchParams(config).toString();
-  const finalUrl = `${baseUrl}?${params}`;
+  const finalUrl = `${baseUrl}?${params}`; //baseUrl과 config를 더해 다른 url을 만들기
   const tokenRequest = await (
     await fetch(finalUrl, {
+      //그 url로 post request 보내기
       method: "POST",
       headers: {
         Accept: "application/json",
@@ -103,15 +105,18 @@ export const finishGithubLogin = async (req, res) => {
     })
   ).json();
   if ("access_token" in tokenRequest) {
-    const { access_token } = tokenRequest;
+    //모든 것이 올바르다면, github는 우리에게 access_token을 준다.
+    const { access_token } = tokenRequest; //이 access_token은 github api와 상호작용 할 때 쓸거다.
     const apiUrl = "https://api.github.com";
     const userData = await (
       await fetch(`${apiUrl}/user`, {
+        //유저 프로필 받기 요청
         headers: {
           Authorization: `token ${access_token}`,
         },
       })
     ).json();
+    //가끔 user들이 email을 보여주지 않을 때가 있기 때문에 email api에게도 요청
     const emailData = await (
       await fetch(`${apiUrl}/user/emails`, {
         headers: {
@@ -123,11 +128,12 @@ export const finishGithubLogin = async (req, res) => {
       (email) => email.primary === true && email.verified === true //깃헙이 주는 list에서 primary이면서 verified된 email객체 찾기
     );
     if (!emailObj) {
+      //set notification ->유저한테 깃허브로 로그인 했다는 것을 알려주기 위해서이다.
       return res.redirect("/login");
     }
     let user = await User.findOne({ email: emailObj.email });
     if (!user) {
-      //유저를 찾게 되면 로그인, 못찾으면 생성 후 로그인
+      //db에서 같은 이메일의 유저를 찾게 되면 로그인, 못찾으면 생성 후 로그인
       user = await User.create({
         avatarUrl: userData.avatar_url,
         name: userData.name ? userData.name : "Unknown",
